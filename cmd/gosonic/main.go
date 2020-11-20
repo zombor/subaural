@@ -48,6 +48,7 @@ func main() {
 	mux.Handle("/rest/ping.view", system.GetPingHandler(httpLogger))
 	mux.Handle("/rest/getLicense.view", system.GetLicenseHandler(httpLogger))
 	mux.Handle("/rest/getMusicFolders.view", browsing.GetMusicFoldersHandler(bs, httpLogger))
+	mux.Handle("/rest/getMusicDirectory.view", browsing.GetMusicDirectory(bs, httpLogger))
 	mux.Handle("/rest/getIndexes.view", browsing.GetIndexesHandler(bs, httpLogger))
 	mux.Handle("/rest/getUser.view", user.GetUserHandler(httpLogger))
 	mux.Handle("/rest/getAlbumList.view", lists.GetAlbumList(httpLogger))
@@ -55,6 +56,7 @@ func main() {
 	mux.Handle("/rest/getPlayQueue.view", bookmarks.GetPlayQueue(httpLogger))
 	mux.Handle("/rest/getBookmarks.view", bookmarks.GetBookmarks(httpLogger))
 	mux.Handle("/rest/getAvatar.view", media.GetAvatar(httpLogger))
+	mux.Handle("/rest/stream.view", media.Stream(httpLogger))
 	mux.Handle(
 		"/",
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"net/http"
 
 	kitlog "github.com/go-kit/kit/log"
@@ -50,6 +51,35 @@ func GetIndexesHandler(bs Service, logger kitlog.Logger) http.Handler {
 	r.Handle("/rest/getIndexes.view", getIndexesHandler).Methods("GET")
 
 	return r
+}
+
+func GetMusicDirectory(bs Service, logger kitlog.Logger) http.Handler {
+	opts := []kithttp.ServerOption{
+		kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
+		kithttp.ServerErrorEncoder(encodeError),
+	}
+
+	getMusicDirectory := kithttp.NewServer(
+		makeGetMusicDirectoryEndpoint(bs),
+		decodeGetMusicDirectoryRequest,
+		encodeResponse,
+		opts...,
+	)
+
+	r := mux.NewRouter()
+
+	r.Handle("/rest/getMusicDirectory.view", getMusicDirectory).Methods("GET")
+
+	return r
+}
+
+func decodeGetMusicDirectoryRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	query := r.URL.Query()
+	id, ok := query["id"]
+	if !ok {
+		return nil, errors.New("missing id")
+	}
+	return getMusicDirectoryRequest{ID: id[0]}, nil
 }
 
 func encodeError(_ context.Context, err error, w http.ResponseWriter) {

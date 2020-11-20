@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	kitlog "github.com/go-kit/kit/log"
@@ -36,6 +37,44 @@ func GetAvatar(logger kitlog.Logger) http.Handler {
 	return r
 }
 
+func Stream(logger kitlog.Logger) http.Handler {
+	opts := []kithttp.ServerOption{
+		kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
+		kithttp.ServerErrorEncoder(encodeError),
+	}
+
+	getAvatar := kithttp.NewServer(
+		makeStreamEndpoint(),
+		decodeStreamRequest,
+		encodeStreamResponse,
+		opts...,
+	)
+
+	r := mux.NewRouter()
+
+	r.Handle("/rest/stream.view", getAvatar).Methods("GET")
+
+	return r
+}
+
+type streamRequest struct {
+	ID string
+}
+
+type streamResponse struct {
+	Data []byte
+	Err  error
+}
+
+func decodeStreamRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	query := r.URL.Query()
+	id, ok := query["id"]
+	if !ok {
+		return nil, errors.New("missing id")
+	}
+	return streamRequest{ID: id[0]}, nil
+}
+
 func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	switch err {
@@ -60,6 +99,17 @@ func encodePngResponse(ctx context.Context, w http.ResponseWriter, response inte
 	}
 	w.Header().Set("Content-Type", "image/png")
 	_, err := w.Write(response.([]byte))
+
+	return err
+}
+
+func encodeStreamResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
+	if e, ok := response.(errorer); ok && e.error() != nil {
+		encodeError(ctx, e.error(), w)
+		return nil
+	}
+	w.Header().Set("Content-Type", "audio/x-flac")
+	_, err := w.Write(response.(streamResponse).Data)
 
 	return err
 }

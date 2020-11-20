@@ -26,7 +26,6 @@ func (r getMusicFoldersResponse) error() error { return r.Err }
 
 func makeGetIndexesEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		println("here")
 		//req := request.(bookCargoRequest)
 		i, err := s.GetIndexes()
 		return getIndexesResponse{SubsonicResponse: subsonic.SubsonicHeaders(), Indexes: i, Err: err}, nil
@@ -40,3 +39,26 @@ type getIndexesResponse struct {
 }
 
 func (r getIndexesResponse) error() error { return r.Err }
+
+type getMusicDirectoryRequest struct {
+	ID string
+}
+
+type getMusicDirectoryResponse struct {
+	subsonic.SubsonicResponse
+	Directory subsonic.MusicDirectory `xml:"directory"`
+	Err       error
+}
+
+func makeGetMusicDirectoryEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(getMusicDirectoryRequest)
+
+		d, err := s.GetMusicDirectory(req.ID)
+		if err != nil {
+			println(err.Error())
+		}
+
+		return getMusicDirectoryResponse{SubsonicResponse: subsonic.SubsonicHeaders(), Directory: d, Err: err}, nil
+	}
+}
