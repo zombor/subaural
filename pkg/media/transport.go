@@ -3,22 +3,17 @@ package media
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"net/http"
 
-	kitlog "github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/transport"
 	kithttp "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 )
 
-func GetAvatar(logger kitlog.Logger) http.Handler {
-	opts := []kithttp.ServerOption{
-		kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
-		kithttp.ServerErrorEncoder(encodeError),
-	}
-
+func GetAvatar(
+	encodeResponse func(ctx context.Context, w http.ResponseWriter, response interface{}) error,
+	opts []kithttp.ServerOption,
+) http.Handler {
 	getAvatar := kithttp.NewServer(
 		func(ctx context.Context, request interface{}) (interface{}, error) {
 			bytes, err := base64.StdEncoding.DecodeString(`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`)
@@ -26,7 +21,7 @@ func GetAvatar(logger kitlog.Logger) http.Handler {
 			return bytes, err
 		},
 		func(_ context.Context, r *http.Request) (interface{}, error) { return nil, nil },
-		encodePngResponse,
+		encodeResponse,
 		opts...,
 	)
 
@@ -37,16 +32,15 @@ func GetAvatar(logger kitlog.Logger) http.Handler {
 	return r
 }
 
-func Stream(logger kitlog.Logger) http.Handler {
-	opts := []kithttp.ServerOption{
-		kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
-		kithttp.ServerErrorEncoder(encodeError),
-	}
-
+func Stream(
+	readMedia func(string) ([]byte, error),
+	encodeResponse func(ctx context.Context, w http.ResponseWriter, response interface{}) error,
+	opts []kithttp.ServerOption,
+) http.Handler {
 	getAvatar := kithttp.NewServer(
-		makeStreamEndpoint(),
+		makeStreamEndpoint(readMedia),
 		decodeStreamRequest,
-		encodeStreamResponse,
+		encodeResponse,
 		opts...,
 	)
 
@@ -57,16 +51,15 @@ func Stream(logger kitlog.Logger) http.Handler {
 	return r
 }
 
-func GetCoverArt(logger kitlog.Logger) http.Handler {
-	opts := []kithttp.ServerOption{
-		kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
-		kithttp.ServerErrorEncoder(encodeError),
-	}
-
+func GetCoverArt(
+	findCoverArt func(string) ([]byte, error),
+	encodeResponse func(ctx context.Context, w http.ResponseWriter, response interface{}) error,
+	opts []kithttp.ServerOption,
+) http.Handler {
 	getCoverArt := kithttp.NewServer(
-		makeGetCoverArtEndpoint(),
+		makeGetCoverArtEndpoint(findCoverArt),
 		decodeGetCoverArtRequest,
-		encodePngResponse,
+		encodeResponse,
 		opts...,
 	)
 
@@ -79,11 +72,6 @@ func GetCoverArt(logger kitlog.Logger) http.Handler {
 
 type streamRequest struct {
 	ID string
-}
-
-type streamResponse struct {
-	Data []byte
-	Err  error
 }
 
 func decodeStreamRequest(_ context.Context, r *http.Request) (interface{}, error) {
@@ -111,47 +99,4 @@ func decodeGetCoverArtRequest(_ context.Context, r *http.Request) (interface{}, 
 		return nil, errors.New("missing id")
 	}
 	return getCoverArtRequest{ID: id[0]}, nil
-}
-
-func encodeError(_ context.Context, err error, w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	switch err {
-	/*
-		case cargo.ErrUnknown:
-			w.WriteHeader(http.StatusNotFound)
-		case ErrInvalidArgument:
-			w.WriteHeader(http.StatusBadRequest)
-	*/
-	default:
-		w.WriteHeader(http.StatusInternalServerError)
-	}
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"error": err.Error(),
-	})
-}
-
-func encodePngResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
-	if e, ok := response.(errorer); ok && e.error() != nil {
-		encodeError(ctx, e.error(), w)
-		return nil
-	}
-	w.Header().Set("Content-Type", "image/png")
-	_, err := w.Write(response.([]byte))
-
-	return err
-}
-
-func encodeStreamResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
-	if e, ok := response.(errorer); ok && e.error() != nil {
-		encodeError(ctx, e.error(), w)
-		return nil
-	}
-	w.Header().Set("Content-Type", "audio/x-flac")
-	_, err := w.Write(response.(streamResponse).Data)
-
-	return err
-}
-
-type errorer interface {
-	error() error
 }

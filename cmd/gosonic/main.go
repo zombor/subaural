@@ -10,6 +10,8 @@ import (
 	"syscall"
 
 	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/transport"
+	kithttp "github.com/go-kit/kit/transport/http"
 
 	"gitlab.com/jeremybush/gosonic/pkg/bookmarks"
 	"gitlab.com/jeremybush/gosonic/pkg/browsing"
@@ -17,6 +19,7 @@ import (
 	"gitlab.com/jeremybush/gosonic/pkg/media"
 	"gitlab.com/jeremybush/gosonic/pkg/system"
 	"gitlab.com/jeremybush/gosonic/pkg/user"
+	"gitlab.com/jeremybush/gosonic/pkg/xml"
 )
 
 func main() {
@@ -36,28 +39,40 @@ func main() {
 	logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
 	logger = log.With(logger, "ts", log.DefaultTimestampUTC)
 
-	httpLogger := log.With(logger, "component", "http")
+	// httpLogger := log.With(logger, "component", "http")
 
 	var bs browsing.Service
 	{
 		bs = browsing.NewService()
+		bs = browsing.NewLoggingService(logger, bs)
+	}
+
+	var ms media.Service
+	{
+		ms = media.NewService()
+		ms = media.NewLoggingService(logger, ms)
 	}
 
 	mux := http.NewServeMux()
 
-	mux.Handle("/rest/ping.view", system.GetPingHandler(httpLogger))
-	mux.Handle("/rest/getLicense.view", system.GetLicenseHandler(httpLogger))
-	mux.Handle("/rest/getMusicFolders.view", browsing.GetMusicFoldersHandler(bs, httpLogger))
-	mux.Handle("/rest/getMusicDirectory.view", browsing.GetMusicDirectory(bs, httpLogger))
-	mux.Handle("/rest/getIndexes.view", browsing.GetIndexesHandler(bs, httpLogger))
-	mux.Handle("/rest/getUser.view", user.GetUserHandler(httpLogger))
-	mux.Handle("/rest/getAlbumList.view", lists.GetAlbumList(httpLogger))
-	mux.Handle("/rest/getRandomSongs.view", lists.GetRandomSongs(httpLogger))
-	mux.Handle("/rest/getPlayQueue.view", bookmarks.GetPlayQueue(httpLogger))
-	mux.Handle("/rest/getBookmarks.view", bookmarks.GetBookmarks(httpLogger))
-	mux.Handle("/rest/getAvatar.view", media.GetAvatar(httpLogger))
-	mux.Handle("/rest/stream.view", media.Stream(httpLogger))
-	mux.Handle("/rest/getCoverArt.view", media.GetCoverArt(httpLogger))
+	opts := []kithttp.ServerOption{
+		kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
+		kithttp.ServerErrorEncoder(xml.EncodeError),
+	}
+
+	mux.Handle("/rest/ping.view", system.GetPingHandler(xml.EncodeResponse, opts))
+	mux.Handle("/rest/getLicense.view", system.GetLicenseHandler(xml.EncodeResponse, opts))
+	mux.Handle("/rest/getMusicFolders.view", browsing.GetMusicFoldersHandler(bs, xml.EncodeResponse, opts))
+	mux.Handle("/rest/getMusicDirectory.view", browsing.GetMusicDirectory(bs, xml.EncodeResponse, opts))
+	mux.Handle("/rest/getIndexes.view", browsing.GetIndexesHandler(bs, xml.EncodeResponse, opts))
+	mux.Handle("/rest/getUser.view", user.GetUserHandler(xml.EncodeResponse, opts))
+	mux.Handle("/rest/getAlbumList.view", lists.GetAlbumList(xml.EncodeResponse, opts))
+	mux.Handle("/rest/getRandomSongs.view", lists.GetRandomSongs(xml.EncodeResponse, opts))
+	mux.Handle("/rest/getPlayQueue.view", bookmarks.GetPlayQueue(xml.EncodeResponse, opts))
+	mux.Handle("/rest/getBookmarks.view", bookmarks.GetBookmarks(xml.EncodeResponse, opts))
+	mux.Handle("/rest/getAvatar.view", media.GetAvatar(xml.EncodeImageResponse, opts))
+	mux.Handle("/rest/stream.view", media.Stream(ms.ReadMedia, xml.EncodeStreamResponse, opts))
+	mux.Handle("/rest/getCoverArt.view", media.GetCoverArt(ms.FindCoverArt, xml.EncodeImageResponse, opts))
 	mux.Handle(
 		"/",
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

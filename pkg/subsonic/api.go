@@ -193,6 +193,9 @@ func FindCoverArt(path string) ([]byte, error) {
 	if ok, data, err := findCoverArt(fmt.Sprintf("/mnt/media/music/%s/Front.jpg", decoded)); ok {
 		return data, err
 	}
+	if ok, data, err := findCoverArt(fmt.Sprintf("/mnt/media/music/%s/Folder.jpg", decoded)); ok {
+		return data, err
+	}
 
 	return nil, nil
 }

@@ -4,11 +4,9 @@ import (
 	"context"
 
 	"github.com/go-kit/kit/endpoint"
-
-	"gitlab.com/jeremybush/gosonic/pkg/subsonic"
 )
 
-func makeStreamEndpoint() endpoint.Endpoint {
+func makeStreamEndpoint(readMedia func(string) ([]byte, error)) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		var (
 			data []byte
@@ -18,13 +16,13 @@ func makeStreamEndpoint() endpoint.Endpoint {
 
 		req := request.(streamRequest)
 
-		data, err = subsonic.ReadFile(req.ID)
+		data, err = readMedia(req.ID)
 
-		return streamResponse{Data: data, Err: err}, nil
+		return data, err
 	}
 }
 
-func makeGetCoverArtEndpoint() endpoint.Endpoint {
+func makeGetCoverArtEndpoint(findCoverArt func(string) ([]byte, error)) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		var (
 			data []byte
@@ -34,7 +32,7 @@ func makeGetCoverArtEndpoint() endpoint.Endpoint {
 
 		req := request.(getCoverArtRequest)
 
-		data, err = subsonic.FindCoverArt(req.ID)
+		data, err = findCoverArt(req.ID)
 
 		return data, err
 	}
