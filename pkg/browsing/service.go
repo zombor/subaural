@@ -100,17 +100,19 @@ func (s service) GetMusicDirectory(id string) (subsonic.MusicDirectory, error) {
 	for _, f := range files {
 		if f.IsDir() {
 			children = append(children, subsonic.DirectoryChild{
-				ID:     subsonic.PathID(fmt.Sprintf("%s/%s", parent, f.Name())),
-				Parent: subsonic.PathID(parent),
-				Title:  f.Name(),
-				IsDir:  true,
+				ID:       subsonic.PathID(fmt.Sprintf("%s/%s", parent, f.Name())),
+				CoverArt: subsonic.PathID(fmt.Sprintf("%s/%s", parent, f.Name())),
+				Parent:   subsonic.PathID(parent),
+				Title:    f.Name(),
+				IsDir:    true,
 			})
 		} else if ok, meta, err := subsonic.ParseFlac(id, f.Name()); err == nil && ok {
 			children = append(children, subsonic.DirectoryChild{
-				ID:     subsonic.PathID(fmt.Sprintf("%s/%s/%s", parent, child, f.Name())),
-				Parent: subsonic.PathID(parent),
-				Title:  meta.Title,
-				IsDir:  false,
+				ID:       subsonic.PathID(fmt.Sprintf("%s/%s/%s", parent, child, f.Name())),
+				CoverArt: subsonic.PathID(fmt.Sprintf("%s/%s/%s", parent, child, f.Name())),
+				Parent:   subsonic.PathID(parent),
+				Title:    meta.Title,
+				IsDir:    false,
 
 				Album: meta.Album,
 				Track: meta.Track,
@@ -121,9 +123,9 @@ func (s service) GetMusicDirectory(id string) (subsonic.MusicDirectory, error) {
 	}
 
 	return subsonic.MusicDirectory{
-		ID:   id,
-		Name: child,
-		//Parent: parent,
+		ID:     id,
+		Name:   child,
+		Parent: subsonic.PathID(parent),
 
 		Children: children,
 	}, nil
