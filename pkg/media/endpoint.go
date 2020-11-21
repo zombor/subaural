@@ -23,3 +23,19 @@ func makeStreamEndpoint() endpoint.Endpoint {
 		return streamResponse{Data: data, Err: err}, nil
 	}
 }
+
+func makeGetCoverArtEndpoint() endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		var (
+			data []byte
+
+			err error
+		)
+
+		req := request.(getCoverArtRequest)
+
+		data, err = subsonic.FindCoverArt(req.ID)
+
+		return data, err
+	}
+}

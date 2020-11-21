@@ -57,6 +57,7 @@ func main() {
 	mux.Handle("/rest/getBookmarks.view", bookmarks.GetBookmarks(httpLogger))
 	mux.Handle("/rest/getAvatar.view", media.GetAvatar(httpLogger))
 	mux.Handle("/rest/stream.view", media.Stream(httpLogger))
+	mux.Handle("/rest/getCoverArt.view", media.GetCoverArt(httpLogger))
 	mux.Handle(
 		"/",
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

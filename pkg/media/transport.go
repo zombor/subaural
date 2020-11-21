@@ -57,6 +57,26 @@ func Stream(logger kitlog.Logger) http.Handler {
 	return r
 }
 
+func GetCoverArt(logger kitlog.Logger) http.Handler {
+	opts := []kithttp.ServerOption{
+		kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
+		kithttp.ServerErrorEncoder(encodeError),
+	}
+
+	getCoverArt := kithttp.NewServer(
+		makeGetCoverArtEndpoint(),
+		decodeGetCoverArtRequest,
+		encodePngResponse,
+		opts...,
+	)
+
+	r := mux.NewRouter()
+
+	r.Handle("/rest/getCoverArt.view", getCoverArt).Methods("GET")
+
+	return r
+}
+
 type streamRequest struct {
 	ID string
 }
@@ -73,6 +93,24 @@ func decodeStreamRequest(_ context.Context, r *http.Request) (interface{}, error
 		return nil, errors.New("missing id")
 	}
 	return streamRequest{ID: id[0]}, nil
+}
+
+type getCoverArtRequest struct {
+	ID string
+}
+
+type getCoverArtResponse struct {
+	Data []byte
+	Err  error
+}
+
+func decodeGetCoverArtRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	query := r.URL.Query()
+	id, ok := query["id"]
+	if !ok {
+		return nil, errors.New("missing id")
+	}
+	return getCoverArtRequest{ID: id[0]}, nil
 }
 
 func encodeError(_ context.Context, err error, w http.ResponseWriter) {

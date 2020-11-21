@@ -171,3 +171,40 @@ func ReadFile(path string) ([]byte, error) {
 
 	return ioutil.ReadFile(fmt.Sprintf("/mnt/media/music/%s", decoded))
 }
+
+func FindCoverArt(path string) ([]byte, error) {
+	var (
+		decoded []byte
+
+		err error
+	)
+
+	decoded, err = base64.RawStdEncoding.DecodeString(path)
+	if err != nil {
+		return nil, err
+	}
+
+	if ok, data, err := findCoverArt(fmt.Sprintf("/mnt/media/music/%s/cover.png", decoded)); ok {
+		return data, err
+	}
+	if ok, data, err := findCoverArt(fmt.Sprintf("/mnt/media/music/%s/cover.jpg", decoded)); ok {
+		return data, err
+	}
+	if ok, data, err := findCoverArt(fmt.Sprintf("/mnt/media/music/%s/Front.jpg", decoded)); ok {
+		return data, err
+	}
+
+	return nil, nil
+}
+
+func findCoverArt(path string) (bool, []byte, error) {
+	_, err := os.Stat(path)
+
+	if err != nil {
+		return false, nil, nil
+	}
+
+	data, err := ioutil.ReadFile(path)
+
+	return true, data, err
+}
