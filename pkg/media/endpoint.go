@@ -6,7 +6,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 )
 
-func makeStreamEndpoint(readMedia func(string) ([]byte, error)) endpoint.Endpoint {
+func makeStreamEndpoint(readMedia func(string, int) ([]byte, error)) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		var (
 			data []byte
@@ -16,7 +16,7 @@ func makeStreamEndpoint(readMedia func(string) ([]byte, error)) endpoint.Endpoin
 
 		req := request.(streamRequest)
 
-		data, err = readMedia(req.ID)
+		data, err = readMedia(req.ID, req.Rate)
 
 		return data, err
 	}

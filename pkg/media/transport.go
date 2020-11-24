@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"net/http"
+	"strconv"
 
 	kithttp "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
@@ -33,11 +34,11 @@ func GetAvatar(
 }
 
 func Stream(
-	readMedia func(string) ([]byte, error),
+	readMedia func(string, int) ([]byte, error),
 	encodeResponse func(ctx context.Context, w http.ResponseWriter, response interface{}) error,
 	opts []kithttp.ServerOption,
 ) http.Handler {
-	getAvatar := kithttp.NewServer(
+	stream := kithttp.NewServer(
 		makeStreamEndpoint(readMedia),
 		decodeStreamRequest,
 		encodeResponse,
@@ -46,7 +47,7 @@ func Stream(
 
 	r := mux.NewRouter()
 
-	r.Handle("/rest/stream.view", getAvatar).Methods("GET")
+	r.Handle("/rest/stream.view", stream).Methods("GET")
 
 	return r
 }
@@ -71,16 +72,31 @@ func GetCoverArt(
 }
 
 type streamRequest struct {
-	ID string
+	ID   string
+	Rate int
 }
 
 func decodeStreamRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var (
+		req streamRequest
+
+		err error
+	)
+
 	query := r.URL.Query()
 	id, ok := query["id"]
 	if !ok {
 		return nil, errors.New("missing id")
 	}
-	return streamRequest{ID: id[0]}, nil
+
+	req.ID = id[0]
+
+	rate, ok := query["maxBitRate"]
+	if ok {
+		req.Rate, err = strconv.Atoi(rate[0])
+	}
+
+	return req, err
 }
 
 type getCoverArtRequest struct {

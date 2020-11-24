@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 
@@ -157,9 +158,10 @@ func ParseFlac(parent, fileName string) (bool, FlacMeta, error) {
 	return true, meta, nil
 }
 
-func ReadFile(path string) ([]byte, error) {
+func ReadFile(path string, rate int) ([]byte, error) {
 	var (
 		decoded []byte
+		//data    []byte
 
 		err error
 	)
@@ -167,6 +169,25 @@ func ReadFile(path string) ([]byte, error) {
 	decoded, err = base64.RawStdEncoding.DecodeString(path)
 	if err != nil {
 		return nil, err
+	}
+
+	if rate > 0 {
+		cmd := exec.Command("ffmpeg", "-i", fmt.Sprintf("/mnt/media/music/%s", decoded), "-f", "mp3", "-b:a", fmt.Sprintf("%dk", rate), "pipe:1")
+		stdout, err := cmd.StdoutPipe()
+		if err != nil {
+			return nil, err
+		}
+		err = cmd.Start()
+		if err != nil {
+			return nil, err
+		}
+
+		data, err := ioutil.ReadAll(stdout)
+		if err != nil {
+			return nil, err
+		}
+
+		return data, cmd.Wait()
 	}
 
 	return ioutil.ReadFile(fmt.Sprintf("/mnt/media/music/%s", decoded))
