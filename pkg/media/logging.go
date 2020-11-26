@@ -18,6 +18,7 @@ func NewLoggingService(logger log.Logger, s Service) Service {
 func (s loggingService) ReadMedia(id string, rate int) (_ []byte, err error) {
 	defer func(begin time.Time) {
 		s.logger.Log(
+			"domain", "media",
 			"method", "ReadMedia",
 			"id", id,
 			"rate", rate,
@@ -32,6 +33,7 @@ func (s loggingService) ReadMedia(id string, rate int) (_ []byte, err error) {
 func (s loggingService) FindCoverArt(id string) (_ []byte, err error) {
 	defer func(begin time.Time) {
 		s.logger.Log(
+			"domain", "media",
 			"method", "FindCoverArt",
 			"id", id,
 			"took", time.Since(begin),

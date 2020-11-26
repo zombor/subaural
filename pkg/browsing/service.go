@@ -15,10 +15,16 @@ type Service interface {
 	GetMusicDirectory(id string) (subsonic.MusicDirectory, error)
 }
 
-type service struct{}
+type service struct {
+	parseFlac func(string, string) (bool, subsonic.FlacMeta, error)
+	readDir   func(string) ([]os.FileInfo, error)
+}
 
-func NewService() *service {
-	return &service{}
+func NewService(
+	parseFlac func(string, string) (bool, subsonic.FlacMeta, error),
+	readDir func(string) ([]os.FileInfo, error),
+) *service {
+	return &service{parseFlac, readDir}
 }
 
 func (s service) GetMusicFolders() (subsonic.MusicFolders, error) {
@@ -92,7 +98,7 @@ func (s service) GetMusicDirectory(id string) (subsonic.MusicDirectory, error) {
 		return subsonic.MusicDirectory{}, err
 	}
 
-	files, err = subsonic.ReadDir(id)
+	files, err = s.readDir(id)
 	if err != nil {
 		return subsonic.MusicDirectory{}, err
 	}
@@ -106,7 +112,7 @@ func (s service) GetMusicDirectory(id string) (subsonic.MusicDirectory, error) {
 				Title:    f.Name(),
 				IsDir:    true,
 			})
-		} else if ok, meta, err := subsonic.ParseFlac(id, f.Name()); err == nil && ok {
+		} else if ok, meta, err := s.parseFlac(id, f.Name()); err == nil && ok {
 			children = append(children, subsonic.DirectoryChild{
 				ID:       subsonic.PathID(fmt.Sprintf("%s/%s/%s", parent, child, f.Name())),
 				CoverArt: subsonic.PathID(fmt.Sprintf("%s/%s/%s", parent, child, f.Name())),
