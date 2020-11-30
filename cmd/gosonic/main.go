@@ -19,6 +19,7 @@ import (
 	"gitlab.com/jeremybush/gosonic/pkg/browsing"
 	"gitlab.com/jeremybush/gosonic/pkg/lists"
 	"gitlab.com/jeremybush/gosonic/pkg/media"
+	"gitlab.com/jeremybush/gosonic/pkg/podcast"
 	"gitlab.com/jeremybush/gosonic/pkg/subsonic"
 	"gitlab.com/jeremybush/gosonic/pkg/system"
 	"gitlab.com/jeremybush/gosonic/pkg/user"
@@ -40,6 +41,7 @@ func main() {
 
 	viper.SetEnvPrefix("gosonic")
 	viper.BindEnv("music_path")
+	viper.BindEnv("podcast_urls")
 
 	var musicPath string
 	{
@@ -48,6 +50,11 @@ func main() {
 			logger.Log("level", "fatal", "msg", "music_path configuration is required")
 			os.Exit(1)
 		}
+	}
+
+	var podcastUrls []string
+	{
+		podcastUrls = viper.GetStringSlice("podcast_urls")
 	}
 
 	var (
@@ -97,6 +104,7 @@ func main() {
 	mux.Handle("/rest/getAvatar.view", media.GetAvatar(xml.EncodeImageResponse, opts))
 	mux.Handle("/rest/stream.view", media.Stream(ms.ReadMedia, xml.EncodeStreamResponse, opts))
 	mux.Handle("/rest/getCoverArt.view", media.GetCoverArt(ms.FindCoverArt, xml.EncodeImageResponse, opts))
+	mux.Handle("/rest/getPodcasts.view", podcast.GetPodcasts(podcastUrls, xml.EncodeResponse, opts))
 	mux.Handle(
 		"/",
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

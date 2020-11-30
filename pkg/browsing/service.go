@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"sync"
 
 	"gitlab.com/jeremybush/gosonic/pkg/subsonic"
 )
@@ -103,30 +104,40 @@ func (s service) GetMusicDirectory(id string) (subsonic.MusicDirectory, error) {
 		return subsonic.MusicDirectory{}, err
 	}
 
-	for _, f := range files {
-		if f.IsDir() {
-			children = append(children, subsonic.DirectoryChild{
-				ID:       subsonic.PathID(fmt.Sprintf("%s/%s", parent, f.Name())),
-				CoverArt: subsonic.PathID(fmt.Sprintf("%s/%s", parent, f.Name())),
-				Parent:   subsonic.PathID(parent),
-				Title:    f.Name(),
-				IsDir:    true,
-			})
-		} else if ok, meta, err := s.parseFlac(id, f.Name()); err == nil && ok {
-			children = append(children, subsonic.DirectoryChild{
-				ID:       subsonic.PathID(fmt.Sprintf("%s/%s/%s", parent, child, f.Name())),
-				CoverArt: subsonic.PathID(fmt.Sprintf("%s/%s/%s", parent, child, f.Name())),
-				Parent:   subsonic.PathID(parent),
-				Title:    meta.Title,
-				IsDir:    false,
+	var wg sync.WaitGroup
 
-				Album: meta.Album,
-				Track: meta.Track,
-				Year:  meta.Date,
-				Genre: meta.Genre,
-			})
-		}
+	for _, file := range files {
+		wg.Add(1)
+
+		go func(f os.FileInfo) {
+			if f.IsDir() {
+				children = append(children, subsonic.DirectoryChild{
+					ID:       subsonic.PathID(fmt.Sprintf("%s/%s", parent, f.Name())),
+					CoverArt: subsonic.PathID(fmt.Sprintf("%s/%s", parent, f.Name())),
+					Parent:   subsonic.PathID(parent),
+					Title:    f.Name(),
+					IsDir:    true,
+				})
+			} else if ok, meta, err := s.parseFlac(id, f.Name()); err == nil && ok {
+				children = append(children, subsonic.DirectoryChild{
+					ID:       subsonic.PathID(fmt.Sprintf("%s/%s/%s", parent, child, f.Name())),
+					CoverArt: subsonic.PathID(fmt.Sprintf("%s/%s/%s", parent, child, f.Name())),
+					Parent:   subsonic.PathID(parent),
+					Title:    meta.Title,
+					IsDir:    false,
+
+					Album: meta.Album,
+					Track: meta.Track,
+					Year:  meta.Date,
+					Genre: meta.Genre,
+				})
+			}
+
+			wg.Done()
+		}(file)
 	}
+
+	wg.Wait()
 
 	return subsonic.MusicDirectory{
 		ID:     id,

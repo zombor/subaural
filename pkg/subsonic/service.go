@@ -4,8 +4,11 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
+	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -69,7 +72,6 @@ func (s service) ParseFlac(parent, fileName string) (bool, FlacMeta, error) {
 func (s service) ReadFile(path string, rate int) ([]byte, error) {
 	var (
 		decoded []byte
-		//data    []byte
 
 		err error
 	)
@@ -77,6 +79,18 @@ func (s service) ReadFile(path string, rate int) ([]byte, error) {
 	decoded, err = base64.RawStdEncoding.DecodeString(path)
 	if err != nil {
 		return nil, err
+	}
+
+	if isURL(string(decoded)) {
+		var resp *http.Response
+
+		resp, err = http.Get(string(decoded))
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+
+		return ioutil.ReadAll(resp.Body)
 	}
 
 	if rate > 0 {
@@ -140,19 +154,55 @@ func (s service) FindCoverArt(path string) ([]byte, error) {
 	return nil, nil
 }
 
-func (s service) ReadDir(dir string) ([]os.FileInfo, error) {
+// ReadDir lists directory entries of an id and returns the file
+func (s service) ReadDir(id string) ([]os.FileInfo, error) {
 	var (
-		decoded []byte
+		decoded       []byte
+		dir, filtered []os.FileInfo
 
 		err error
 	)
 
-	decoded, err = base64.RawStdEncoding.DecodeString(dir)
+	decoded, err = base64.RawStdEncoding.DecodeString(id)
 	if err != nil {
 		return nil, err
 	}
 
-	return ioutil.ReadDir(fmt.Sprintf("%s/%s", s.musicPath, decoded))
+	dir, err = ioutil.ReadDir(fmt.Sprintf("%s/%s", s.musicPath, decoded))
+	if err != nil {
+		return nil, err
+	}
+
+	for i, _ := range dir {
+		if dir[i].IsDir() {
+			filtered = append(filtered, dir[i])
+			continue
+		}
+
+		file, err := os.Open(fmt.Sprintf("%s/%s/%s", s.musicPath, decoded, dir[i].Name()))
+		if err != nil {
+			return filtered, err
+		}
+
+		buffer := make([]byte, 512)
+
+		_, err = file.Read(buffer)
+		if err != nil {
+			return filtered, err
+		}
+
+		contentType := http.DetectContentType(buffer)
+
+		if contentType == "audio/flac" || contentType == "audio/mpeg" {
+			filtered = append(filtered, dir[i])
+		}
+
+		if filepath.Ext(dir[i].Name()) == ".flac" || filepath.Ext(dir[i].Name()) == ".mp3" {
+			filtered = append(filtered, dir[i])
+		}
+	}
+
+	return filtered, err
 }
 
 func findCoverArt(path string) (bool, []byte, error) {
@@ -194,4 +244,18 @@ func parseFlacMeta(c *flacvorbis.MetaDataBlockVorbisComment) FlacMeta {
 	}
 
 	return meta
+}
+
+func isURL(s string) bool {
+	_, err := url.ParseRequestURI(s)
+	if err != nil {
+		return false
+	}
+
+	u, err := url.Parse(s)
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		return false
+	}
+
+	return true
 }
