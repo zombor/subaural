@@ -2,6 +2,7 @@ package podcast
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/go-kit/kit/endpoint"
@@ -51,9 +52,13 @@ func makeGetPodcastsEndpoint(urls []string) endpoint.Endpoint {
 						return nil, err
 					}
 
+					if len(ch.Item[j].Enclosure) == 0 {
+						return nil, fmt.Errorf("podcast %s index %d is missing a url enclosure", urls[i], j)
+					}
+
 					channel.Episodes[j] = subsonic.Episode{
 						ID:          subsonic.PathID(string(ch.Item[j].PubDate)),
-						StreamID:    subsonic.PathID(ch.Item[j].GUID),
+						StreamID:    subsonic.PathID(ch.Item[j].Enclosure[0].URL),
 						CoverArt:    "1",
 						ChannelID:   subsonic.PathID(urls[i]),
 						Title:       ch.Item[j].Title,
@@ -67,7 +72,7 @@ func makeGetPodcastsEndpoint(urls []string) endpoint.Endpoint {
 						//BitRate:     128,
 						//Size:        100,
 						//Duration:    100,
-						Path: ch.Item[j].GUID,
+						Path: ch.Item[j].Enclosure[0].URL,
 					}
 				}
 			}
