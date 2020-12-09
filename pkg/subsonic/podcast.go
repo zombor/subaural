@@ -10,13 +10,14 @@ type Podcasts struct {
 type Channel struct {
 	XMLName xml.Name `xml:"channel"`
 
-	ID          string    `xml:"id,attr"`
-	URL         string    `xml:"url,attr"`
-	Title       string    `xml:"title,attr"`
-	Description string    `xml:"description,attr"`
-	Status      string    `xml:"status,attr"`
-	CoverArt    string    `xml:"coverArt,attr"`
-	Episodes    []Episode `xml:"episode"`
+	ID               string    `xml:"id,attr"`
+	URL              string    `xml:"url,attr"`
+	Title            string    `xml:"title,attr"`
+	Description      string    `xml:"description,attr"`
+	Status           string    `xml:"status,attr"`
+	CoverArt         string    `xml:"coverArt,attr"`
+	OriginalImageURL string    `xml:"originalImageUrl,attr"`
+	Episodes         []Episode `xml:"episode"`
 }
 
 type Episode struct {

@@ -2,7 +2,7 @@ package podcast
 
 import (
 	"context"
-	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-kit/kit/endpoint"
@@ -41,19 +41,21 @@ func makeGetPodcastsEndpoint(urls []string) endpoint.Endpoint {
 				Title:       ch.Title,
 				Description: ch.Description,
 				Status:      "completed",
+				//OriginalImageURL: ch.Image.URL,
 			}
 
 			if req.IncludeEpisodes {
 				channel.Episodes = make([]subsonic.Episode, len(ch.Item))
 
 				for j, _ := range ch.Item {
-					pubDate, err := time.Parse("Mon, 2 Jan 2006 15:04:05 MST", string(ch.Item[j].PubDate))
+					pubDate, err := time.Parse("Mon, 2 Jan 2006 15:04:05 MST", strings.TrimSpace(string(ch.Item[j].PubDate)))
 					if err != nil {
 						return nil, err
 					}
 
 					if len(ch.Item[j].Enclosure) == 0 {
-						return nil, fmt.Errorf("podcast %s index %d is missing a url enclosure", urls[i], j)
+						continue
+						//return nil, fmt.Errorf("podcast %s index %d is missing a url enclosure", urls[i], j)
 					}
 
 					channel.Episodes[j] = subsonic.Episode{
