@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"gitlab.com/jeremybush/gosonic/pkg/subsonic"
+	"github.com/zombor/subaural/pkg/subsonic"
 )
 
 type Service interface {

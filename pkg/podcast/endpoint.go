@@ -8,7 +8,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	rss "github.com/ungerik/go-rss"
 
-	"gitlab.com/jeremybush/gosonic/pkg/subsonic"
+	"github.com/zombor/subaural/pkg/subsonic"
 )
 
 func makeGetPodcastsEndpoint(urls []string) endpoint.Endpoint {

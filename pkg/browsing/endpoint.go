@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 
-	"gitlab.com/jeremybush/gosonic/pkg/subsonic"
+	"github.com/zombor/subaural/pkg/subsonic"
 )
 
 func makeGetMusicFoldersEndpoint(s Service) endpoint.Endpoint {

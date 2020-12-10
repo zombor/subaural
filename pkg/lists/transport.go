@@ -7,7 +7,7 @@ import (
 	kithttp "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 
-	"gitlab.com/jeremybush/gosonic/pkg/subsonic"
+	"github.com/zombor/subaural/pkg/subsonic"
 )
 
 // Not sure how often this is really used?

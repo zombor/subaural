@@ -1,4 +1,4 @@
-module gitlab.com/jeremybush/gosonic
+module github.com/zombor/subaural
 
 go 1.15
 

@@ -15,15 +15,15 @@ import (
 
 	"github.com/spf13/viper"
 
-	"gitlab.com/jeremybush/gosonic/pkg/bookmarks"
-	"gitlab.com/jeremybush/gosonic/pkg/browsing"
-	"gitlab.com/jeremybush/gosonic/pkg/lists"
-	"gitlab.com/jeremybush/gosonic/pkg/media"
-	"gitlab.com/jeremybush/gosonic/pkg/podcast"
-	"gitlab.com/jeremybush/gosonic/pkg/subsonic"
-	"gitlab.com/jeremybush/gosonic/pkg/system"
-	"gitlab.com/jeremybush/gosonic/pkg/user"
-	"gitlab.com/jeremybush/gosonic/pkg/xml"
+	"github.com/zombor/subaural/pkg/bookmarks"
+	"github.com/zombor/subaural/pkg/browsing"
+	"github.com/zombor/subaural/pkg/lists"
+	"github.com/zombor/subaural/pkg/media"
+	"github.com/zombor/subaural/pkg/podcast"
+	"github.com/zombor/subaural/pkg/subsonic"
+	"github.com/zombor/subaural/pkg/system"
+	"github.com/zombor/subaural/pkg/user"
+	"github.com/zombor/subaural/pkg/xml"
 )
 
 func main() {
@@ -39,7 +39,7 @@ func main() {
 	logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
 	logger = log.With(logger, "ts", log.DefaultTimestampUTC)
 
-	viper.SetEnvPrefix("gosonic")
+	viper.SetEnvPrefix("subaural")
 	viper.BindEnv("music_path")
 	viper.BindEnv("podcast_urls")
 

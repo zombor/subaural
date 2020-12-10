@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-kit/kit/log"
 
-	"gitlab.com/jeremybush/gosonic/pkg/subsonic"
+	"github.com/zombor/subaural/pkg/subsonic"
 )
 
 type loggingService struct {

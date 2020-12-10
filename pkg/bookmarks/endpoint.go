@@ -1,7 +1,7 @@
 package bookmarks
 
 import (
-	"gitlab.com/jeremybush/gosonic/pkg/subsonic"
+	"github.com/zombor/subaural/pkg/subsonic"
 )
 
 type getBookmarksResponse struct {
